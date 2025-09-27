@@ -8,8 +8,7 @@ from typing import List
 
 
 def do_run(cmd):
-    res = run(cmd, capture_output=True, check=True)
-    print(res)
+    run(cmd, capture_output=True, check=True)
 
 
 def render_typst(typst: str) -> ImageFile:
