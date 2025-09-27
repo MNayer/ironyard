@@ -1,2 +1,4 @@
+# Base requirements
+pyyaml==6.0.3
 playwright==1.55.0
 beautifulsoup4==4.13.5
