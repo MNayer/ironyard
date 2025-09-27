@@ -1,6 +1,7 @@
 import json
 import re
 import yaml
+import time
 import logging
 from typing import List
 from pathlib import Path
@@ -9,6 +10,8 @@ from collections import defaultdict
 
 from db import Researcher, Publication
 from scraper import scrape_researcher
+from screen import Screen
+from render import render_new_publications
 
 log = logging.getLogger(__name__)
 
@@ -83,6 +86,9 @@ def extract_researcher_ids(researcher_urls: List[str]) -> List[str]:
 
 
 def test():
+    # Setup Screen
+    screen = Screen()
+
     # Load config
     config_path = Path("./config.yml")
     config = load_config(config_path)
@@ -97,17 +103,26 @@ def test():
 
     new_publications = defaultdict(set)
 
-    for researcher_id in researcher_ids:
-        researcher = scrape_researcher(researcher_id)
-        researcher_new_publications = db.get_publication_diff(researcher)
+    # TODO: USE
+    #for researcher_id in researcher_ids:
+    #    researcher = scrape_researcher(researcher_id)
+    #    researcher_new_publications = db.get_publication_diff(researcher)
 
-        for publication in researcher_new_publications:
-            new_publications[publication.title].add(researcher.name)
+    #    for publication in researcher_new_publications:
+    #        new_publications[publication.title].add(researcher.name)
 
-        db.update(researcher)
+    #    db.update(researcher)
+
+    # TODO: REMOVE
+    new_publications["LLM-based Vulnerability Discovery through the Lens of Code Metrics"] = set(["Thorsten Eisenhofer"])
+    new_publications["Adversarial Observations in Weather Forecasting"] = set(["Thorsten Eisenhofer", "Erik Imgrund"])
 
     if len(new_publications) > 0:
-        new_publication_handler(new_publications)
+        images = render_new_publications(new_publications)
+
+        for image in images:
+            screen.update(image)
+            time.sleep(config["show"])
 
 
 if __name__ == "__main__":

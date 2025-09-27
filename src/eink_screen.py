@@ -26,7 +26,6 @@ class EInkScreen:
         self.epd.display(self.epd.getbuffer(image))
         self.epd.lut_GC()
         self.epd.refresh()
-        time.sleep(20)
 
 
     def shutdown(self):

@@ -1,6 +1,7 @@
 # IronYard Project
 
 ## Setup
+Make sure `typst` is installed on the system. Then run:
 ```
 ./scripts/build.sh
 ```
