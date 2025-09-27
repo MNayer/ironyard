@@ -1,6 +1,7 @@
 dbpath: ./data/db.json
 show: 30
 sound: true
+test: true
 researchers:
   - https://scholar.google.com/citations?user=PyPLDisAAAAJ&hl=de&oi=ao
   - https://scholar.google.com/citations?user=9u16Fm4AAAAJ&hl=de&oi=ao

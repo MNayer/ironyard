@@ -113,9 +113,9 @@ def test():
 
     #    db.update(researcher)
 
-    # TODO: REMOVE
-    new_publications["LLM-based Vulnerability Discovery through the Lens of Code Metrics"] = set(["Thorsten Eisenhofer"])
-    new_publications["Adversarial Observations in Weather Forecasting"] = set(["Thorsten Eisenhofer", "Erik Imgrund"])
+    if config["test"]:
+        new_publications["LLM-based Vulnerability Discovery through the Lens of Code Metrics"] = set(["Thorsten Eisenhofer"])
+        new_publications["Adversarial Observations in Weather Forecasting"] = set(["Thorsten Eisenhofer", "Erik Imgrund"])
 
     if len(new_publications) > 0:
         images = render_new_publications(new_publications)
@@ -123,6 +123,8 @@ def test():
         for image in images:
             screen.update(image)
             time.sleep(config["show"])
+
+    screen.shutdown()
 
 
 if __name__ == "__main__":
