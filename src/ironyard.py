@@ -54,12 +54,14 @@ class DatabaseManager:
             if publication.title not in self.db.new:
                 self.db.new[publication.title] = PublicationUpdate(
                     title=publication.title,
-                    authors=set(researcher.name),
+                    authors=set([researcher.name]),
                     date=date.today(),
                 )
                 continue
 
-            self.db.new[publication.title].authors.add(researcher.name)
+            if researcher.name not in self.db.new[publication.title].authors:
+                self.db.new[publication.title].authors.add(researcher.name)
+            
 
         # Update the researcher
         self.db.researchers[researcher.id] = researcher
@@ -69,19 +71,21 @@ class DatabaseManager:
         return self.db.new
 
 
-    def save(self):
-        pass
-
-
     def to_dict(self) -> dict:
-        db_dict = {
-            id: asdict(researcher) for id, researcher in self.db.items()
-        }
+        db_dict = asdict(self.db)
         return db_dict
 
 
+    def to_str(self) -> str:
+        return json.dumps(self.to_dict(), indent=2)
+
+
+    def save(self):
+        self.db_path.write_text(self.to_str())
+
+
     def show(self):
-        print(json.dumps(self.to_dict(), indent=2))
+        print(self.to_str())
 
 
 def load_config(config_path: Path) -> dict:
@@ -121,16 +125,18 @@ def update(screen):
             researcher = scrape_researcher(researcher_id)
             db.update(researcher)
 
+    db.save()
+
     new_publications = db.get_new_publications()
 
     if config["test"]:
-        new_publications["LLM-based Vulnerability Discovery through the Lens of Code Metrics"] = PublicationUpdate(
-                    title="LLM-based Vulnerability Discovery through the Lens of Code Metrics",
+        new_publications["All new Publication with Advanced Method and Great Results"] = PublicationUpdate(
+                    title="All new Publication with Advanced Method and Great Results",
                     authors=set(["Thorsten Eisenhofer"]),
                     date=date.today(),
                 )
-        new_publications["Adversarial Observations in Weather Forecasting"] = PublicationUpdate(
-                    title="Adversarial Observations in Weather Forecasting",
+        new_publications["Doors: Finding Security Flaws in Real Life Objects"] = PublicationUpdate(
+                    title="Doors: Finding Security Flaws in Real Life Objects",
                     authors=set(["Thorsten Eisenhofer", "Erik Imgrund"]),
                     date=date.today(),
                 )
