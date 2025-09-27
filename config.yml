@@ -3,13 +3,21 @@ dbpath: ./data/db.json
 shownewfordays: 2
 # Amount of time to show new publications on screen in seconds.
 show: 30
-# Turn sund on/off.
-sound: true
-# Adds new publications artificially to test whether they are shown correctly.
-test: false
-# Turn on/off scraping of Google Scholar. This should only be set to 'true' for development.
-noscrape: true
+# Turn sund on/off (not yet supported).
+sound: false
 # The researchers to follow.
 researchers:
   - https://scholar.google.com/citations?user=PyPLDisAAAAJ&hl=de&oi=ao
   - https://scholar.google.com/citations?user=9u16Fm4AAAAJ&hl=de&oi=ao
+
+
+###
+### Debugging Config
+###
+
+# Adds new publications artificially to test whether they are shown correctly.
+test: true
+# Disable the scheduler and run the full update once.
+runonce: true
+# Turn on/off scraping of Google Scholar. This should only be set to 'true' for development.
+noscrape: true

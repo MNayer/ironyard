@@ -3,10 +3,12 @@ import re
 import yaml
 import time
 import logging
+import functools as ft
 from typing import List
 from pathlib import Path
 from dataclasses import asdict
 from datetime import date
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 from db import Researcher, PublicationUpdate, Database
 from scraper import scrape_researcher
@@ -15,6 +17,7 @@ from render import render_new_publications, render_default
 
 log = logging.getLogger(__name__)
 
+CONFIG_PATH = "./config.yml"
 
 class DatabaseManager:
 
@@ -96,12 +99,9 @@ def extract_researcher_ids(researcher_urls: List[str]) -> List[str]:
     return researcher_ids
 
 
-def test():
-    # Setup Screen
-    screen = Screen()
-
+def update(screen):
     # Load config
-    config_path = Path("./config.yml")
+    config_path = Path(CONFIG_PATH)
     config = load_config(config_path)
 
     if config["noscrape"]:
@@ -157,6 +157,27 @@ def test():
         screen.update(image)
 
 
+def start():
+    # Load config
+    config_path = Path(CONFIG_PATH)
+    config = load_config(config_path)
+
+    # Setup screen
+    screen = Screen()
+
+    if config["runonce"]:
+        update(screen)
+        screen.shutdown()
+        return
+
+    scheduler = BlockingScheduler()
+    scheduler.add_job(ft.partial(update, screen=screen), "cron", hour="9,15,18,21")
+
+    try:
+        scheduler.start()
+    except KeyboardInterrupt:
+        screen.shutdown()
+
+
 if __name__ == "__main__":
-    test()
-    test()
+    start()
