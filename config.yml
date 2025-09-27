@@ -1,4 +1,4 @@
-dbpath: ./data/db.json
+dbpath: ./data/db.pickle
 # Number of days to show new publications for.
 shownewfordays: 2
 # Amount of time to show new publications on screen in seconds.
@@ -16,8 +16,8 @@ researchers:
 ###
 
 # Adds new publications artificially to test whether they are shown correctly.
-test: true
+test: false
 # Disable the scheduler and run the full update once.
-runonce: true
+runonce: false
 # Turn on/off scraping of Google Scholar. This should only be set to 'true' for development.
-noscrape: true
+noscrape: false

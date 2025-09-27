@@ -30,27 +30,23 @@ def render_typst(typst: str) -> ImageFile:
     return image
 
 
-def render_new_publications(publications: List[PublicationUpdate]) -> List[ImageFile]:
+def render_new_publication(publication: PublicationUpdate, current: int = 0, total: int = 0) -> ImageFile:
     env = Environment(loader=FileSystemLoader("./templates/"))
     template = env.get_template("new.typ")
 
-    images = []
-    total_publications = len(publications)
-    multiple_publications = total_publications > 1
+    multiple_publications = total > 1
+    author = ", ".join(publication.authors)
 
-    for idx, publication in enumerate(publications, start=1):
-        author = ", ".join(publication.authors)
-        typst = template.render(
-            title=publication.title,
-            author=author,
-            multiple_publications=multiple_publications,
-            current_publication=idx,
-            total_publications=total_publications,
-        )
-        image = render_typst(typst)
-        images.append(image)
+    typst = template.render(
+        title=publication.title,
+        author=author,
+        multiple_publications=multiple_publications,
+        current_publication=current,
+        total_publications=total,
+    )
+    image = render_typst(typst)
 
-    return images
+    return image
 
 
 def render_default() -> ImageFile:

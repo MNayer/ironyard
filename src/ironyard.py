@@ -1,37 +1,37 @@
 import json
 import re
+import pickle
 import yaml
-import time
 import logging
 import functools as ft
 from typing import List
 from pathlib import Path
 from dataclasses import asdict
 from datetime import date
+from dataclasses import dataclass
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 from db import Researcher, PublicationUpdate, Database
 from scraper import scrape_researcher
 from screen import Screen
-from render import render_new_publications, render_default
+from render import render_new_publication, render_default
 
 log = logging.getLogger(__name__)
 
 CONFIG_PATH = "./config.yml"
+
+
+@dataclass
+class State:
+    current_page: int
+    total_pages: int
+
 
 class DatabaseManager:
 
     def __init__(self, db_path: Path):
         self.db_path = db_path
         self.db = Database()
-
-
-    def load(self):
-        if not self.db_path.exists():
-            return
-
-        db_data = self.db_path.read_text()
-        self.db = json.loads(db_data)
 
 
     def update(self, researcher: Researcher):
@@ -81,7 +81,15 @@ class DatabaseManager:
 
 
     def save(self):
-        self.db_path.write_text(self.to_str())
+        self.db_path.write_bytes(pickle.dumps(self.db))
+
+
+    def load(self):
+        if not self.db_path.exists():
+            return
+
+        db_data = self.db_path.read_bytes()
+        self.db = pickle.loads(db_data)
 
 
     def show(self):
@@ -103,29 +111,11 @@ def extract_researcher_ids(researcher_urls: List[str]) -> List[str]:
     return researcher_ids
 
 
-def update(screen):
-    # Load config
-    config_path = Path(CONFIG_PATH)
-    config = load_config(config_path)
-
-    if config["noscrape"]:
-        log.warning("Scraping is disabled. With this setting, new publications are not retrieved. Only set this for debugging purposes.")
-
-    # Extract the researcher IDs
-    researcher_ids = extract_researcher_ids(config["researchers"])
-
+def update_screen(config, screen, state):
     # Load/create database file
     db_path = Path(config["dbpath"])
     db = DatabaseManager(db_path)
     db.load()
-
-    # Scrape for new publications
-    if not config["noscrape"]:
-        for researcher_id in researcher_ids:
-            researcher = scrape_researcher(researcher_id)
-            db.update(researcher)
-
-    db.save()
 
     new_publications = db.get_new_publications()
 
@@ -150,17 +140,38 @@ def update(screen):
     current_date = date.today()
     max_delta = config["shownewfordays"]
     new_publications = filter(lambda publication: (current_date - publication.date).days < max_delta, new_publications.values())
-    new_publications = list(new_publications)
+    new_publications = sorted(new_publications, key=lambda publication: publication.date, reverse=True)
 
     if len(new_publications) > 0:
-        images = render_new_publications(new_publications)
-
-        for image in images:
-            screen.update(image)
-            time.sleep(config["show"])
+        state.total_pages = len(new_publications)
+        state.current_page = (state.current_page % state.total_pages) + 1
+        publication = new_publications[state.current_page - 1]
+        image = render_new_publication(publication, state.current_page, state.total_pages)
     else:
         image = render_default()
-        screen.update(image)
+
+    screen.update(image)
+
+
+def update_database(config):
+    if config["noscrape"]:
+        log.warning("Scraping is disabled. With this setting, new publications are not retrieved. Only set this for debugging purposes.")
+
+    # Extract the researcher IDs
+    researcher_ids = extract_researcher_ids(config["researchers"])
+
+    # Load/create database file
+    db_path = Path(config["dbpath"])
+    db = DatabaseManager(db_path)
+    db.load()
+
+    # Scrape for new publications
+    if not config["noscrape"]:
+        for researcher_id in researcher_ids:
+            researcher = scrape_researcher(researcher_id)
+            db.update(researcher)
+
+    db.save()
 
 
 def start():
@@ -170,14 +181,23 @@ def start():
 
     # Setup screen
     screen = Screen()
+    state = State(current_page=0, total_pages=0)
+
+    # Run once on startup
+    update_database(config)
+    update_screen(config, screen, state)
 
     if config["runonce"]:
-        update(screen)
         screen.shutdown()
         return
 
     scheduler = BlockingScheduler()
-    scheduler.add_job(ft.partial(update, screen=screen), "cron", hour="9,15,18,21")
+
+    # Update database schedule
+    scheduler.add_job(ft.partial(update_database, config=config), "cron", hour="9,15,18,21")
+
+    # Update screen schedule
+    scheduler.add_job(ft.partial(update_screen, config=config, screen=screen, state=state), "interval", seconds=config["show"])
 
     try:
         scheduler.start()

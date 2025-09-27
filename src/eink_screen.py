@@ -6,7 +6,7 @@ from waveshare_epd import epd3in52
 
 log = logging.getLogger(__name__)
 
-class EInkScreen:
+class EInkScreen():
 
     def __init__(self):
         logging.info("init and clear")
