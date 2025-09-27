@@ -6,21 +6,21 @@ import logging
 from typing import List
 from pathlib import Path
 from dataclasses import asdict
-from collections import defaultdict
+from datetime import date
 
-from db import Researcher, Publication
+from db import Researcher, PublicationUpdate, Database
 from scraper import scrape_researcher
 from screen import Screen
-from render import render_new_publications
+from render import render_new_publications, render_default
 
 log = logging.getLogger(__name__)
 
 
-class Database:
+class DatabaseManager:
 
     def __init__(self, db_path: Path):
         self.db_path = db_path
-        self.db = {}
+        self.db = Database()
 
 
     def load(self):
@@ -31,28 +31,39 @@ class Database:
         self.db = json.loads(db_data)
 
 
-    def get_publication_diff(self, researcher) -> List[Publication]:
-        if researcher.id not in self.db:
-            return []
-
-        old_researcher = self.db[researcher.id]
-        old_publications = old_researcher.publications
-        publication_diff = set(researcher.publications) - set(old_publications)
-
-        return list(publication_diff)
-
-
     def update(self, researcher: Researcher):
-        if researcher.id not in self.db:
-            self.db[researcher.id] = researcher
+        if researcher.id not in self.db.researchers:
+            self.db.researchers[researcher.id] = researcher
             return
 
         # Sanity check
-        if len(researcher.publications) < len(self.db[researcher.id].publications) * 0.9:
+        if len(researcher.publications) < len(self.db.researchers[researcher.id].publications) * 0.9:
             log.warning(f"The number of publications from '{researcher.name}' with id '{researcher.id}' would decrease significantly upon update. Skipping.")
             return
 
-        self.db[researcher.id] = researcher
+
+        # Update the new publications
+        old_researcher = self.db.researchers[researcher.id]
+        old_publications = old_researcher.publications
+        publication_diff = set(researcher.publications) - set(old_publications)
+
+        for publication in publication_diff:
+            if publication.title not in self.db.new:
+                self.db.new[publication.title] = PublicationUpdate(
+                    title=publication.title,
+                    authors=set(researcher.name),
+                    date=date.today(),
+                )
+                continue
+
+            self.db.new[publication.title].authors.add(researcher.name)
+
+        # Update the researcher
+        self.db.researchers[researcher.id] = researcher
+
+
+    def get_new_publications(self):
+        return self.db.new
 
 
     def save(self):
@@ -93,29 +104,47 @@ def test():
     config_path = Path("./config.yml")
     config = load_config(config_path)
 
+    if config["noscrape"]:
+        log.warning("Scraping is disabled. With this setting, new publications are not retrieved. Only set this for debugging purposes.")
+
     # Extract the researcher IDs
     researcher_ids = extract_researcher_ids(config["researchers"])
 
     # Load/create database file
     db_path = Path(config["dbpath"])
-    db = Database(db_path)
+    db = DatabaseManager(db_path)
     db.load()
 
-    new_publications = defaultdict(set)
+    # Scrape for new publications
+    if not config["noscrape"]:
+        for researcher_id in researcher_ids:
+            researcher = scrape_researcher(researcher_id)
+            db.update(researcher)
 
-    # TODO: USE
-    #for researcher_id in researcher_ids:
-    #    researcher = scrape_researcher(researcher_id)
-    #    researcher_new_publications = db.get_publication_diff(researcher)
-
-    #    for publication in researcher_new_publications:
-    #        new_publications[publication.title].add(researcher.name)
-
-    #    db.update(researcher)
+    new_publications = db.get_new_publications()
 
     if config["test"]:
-        new_publications["LLM-based Vulnerability Discovery through the Lens of Code Metrics"] = set(["Thorsten Eisenhofer"])
-        new_publications["Adversarial Observations in Weather Forecasting"] = set(["Thorsten Eisenhofer", "Erik Imgrund"])
+        new_publications["LLM-based Vulnerability Discovery through the Lens of Code Metrics"] = PublicationUpdate(
+                    title="LLM-based Vulnerability Discovery through the Lens of Code Metrics",
+                    authors=set(["Thorsten Eisenhofer"]),
+                    date=date.today(),
+                )
+        new_publications["Adversarial Observations in Weather Forecasting"] = PublicationUpdate(
+                    title="Adversarial Observations in Weather Forecasting",
+                    authors=set(["Thorsten Eisenhofer", "Erik Imgrund"]),
+                    date=date.today(),
+                )
+        new_publications["This should not appear"] = PublicationUpdate(
+                    title="This should not appear",
+                    authors=set(["Thorsten Eisenhofer", "Erik Imgrund"]),
+                    date=date(1999, 1, 1),
+                )
+
+    # Filter new publications to only include the most recent ones
+    current_date = date.today()
+    max_delta = config["shownewfordays"]
+    new_publications = filter(lambda publication: (current_date - publication.date).days < max_delta, new_publications.values())
+    new_publications = list(new_publications)
 
     if len(new_publications) > 0:
         images = render_new_publications(new_publications)
@@ -123,9 +152,11 @@ def test():
         for image in images:
             screen.update(image)
             time.sleep(config["show"])
-
-    screen.shutdown()
+    else:
+        image = render_default()
+        screen.update(image)
 
 
 if __name__ == "__main__":
+    test()
     test()

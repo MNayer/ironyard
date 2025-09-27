@@ -5,6 +5,9 @@ from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
 from subprocess import run
 from typing import List
+from datetime import date
+
+from db import PublicationUpdate
 
 
 def do_run(cmd):
@@ -27,7 +30,7 @@ def render_typst(typst: str) -> ImageFile:
     return image
 
 
-def render_new_publications(publications: dict) -> List[ImageFile]:
+def render_new_publications(publications: List[PublicationUpdate]) -> List[ImageFile]:
     env = Environment(loader=FileSystemLoader("./templates/"))
     template = env.get_template("new.typ")
 
@@ -35,10 +38,10 @@ def render_new_publications(publications: dict) -> List[ImageFile]:
     total_publications = len(publications)
     multiple_publications = total_publications > 1
 
-    for idx, (title, author) in enumerate(publications.items(), start=1):
-        author = ", ".join(author)
+    for idx, publication in enumerate(publications, start=1):
+        author = ", ".join(publication.authors)
         typst = template.render(
-            title=title,
+            title=publication.title,
             author=author,
             multiple_publications=multiple_publications,
             current_publication=idx,
@@ -48,3 +51,16 @@ def render_new_publications(publications: dict) -> List[ImageFile]:
         images.append(image)
 
     return images
+
+
+def render_default() -> ImageFile:
+    env = Environment(loader=FileSystemLoader("./templates/"))
+    template = env.get_template("default.typ")
+
+    cd = date.today()
+    date_str = f"{cd:%A}, {cd:%-d}.{cd:%-m}.{cd:%Y}"
+
+    typst = template.render(date=date_str)
+    image = render_typst(typst)
+
+    return image

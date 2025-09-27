@@ -1,7 +1,15 @@
 dbpath: ./data/db.json
+# Number of days to show new publications for.
+shownewfordays: 2
+# Amount of time to show new publications on screen in seconds.
 show: 30
+# Turn sund on/off.
 sound: true
-test: true
+# Adds new publications artificially to test whether they are shown correctly.
+test: false
+# Turn on/off scraping of Google Scholar. This should only be set to 'true' for development.
+noscrape: true
+# The researchers to follow.
 researchers:
   - https://scholar.google.com/citations?user=PyPLDisAAAAJ&hl=de&oi=ao
   - https://scholar.google.com/citations?user=9u16Fm4AAAAJ&hl=de&oi=ao
