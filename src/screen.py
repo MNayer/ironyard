@@ -1,4 +1,5 @@
 import logging
+import time
 from PIL import Image
 
 log = logging.getLogger(__name__)
@@ -18,6 +19,7 @@ def test():
     try:
         screen = Screen()
         screen.update(image)
+        time.sleep(10)
 
     except IOError as e:
         logging.warning("IOError:", str(e))

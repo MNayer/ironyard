@@ -1,14 +1,14 @@
-#set page(width: 74.51mm, height: 49.67mm)
+#set page(width: 180pt, height: 120pt)
 
 == New Publication
 
 #line(length: 15%)
 
-#text(font: "Lato", size:10pt)[
+#text(size:9pt)[
 _{{ author }}_
 ]
 
-#text(size:12pt)[
+#text(size:10pt)[
 {{ title }}
 ]
 

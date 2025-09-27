@@ -7,7 +7,7 @@ sudo apt-get install -y \
   python3-pip \
   python3-venv
 
-python3 -m venv env
+python3 -m venv --system-site-packages env
 source env/bin/activate
 
 # Install python requirements
