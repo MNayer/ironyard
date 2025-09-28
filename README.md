@@ -2,9 +2,10 @@
 
 ## Setup
 Make sure `typst` is installed on the system. Then run:
-```
+```bash
 ./scripts/setup.sh
 ./scripts/install.sh
+sudo systemctl reboot
 ```
 
 ## E-Ink screen for IronYard

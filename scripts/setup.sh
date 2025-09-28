@@ -16,6 +16,8 @@ if cat /proc/cpuinfo | grep -i raspberry &> /dev/null; then
   echo "[+] Password required to enable SPI in config."
   config_path=/boot/firmware/config.txt
   cat ${config_path} | sed 's/.*dtparam=spi=.*/dtparam=spi=on/' | tee ${config_path}
+
+  echo "[!] Reboot required."
 fi
 
 python3 -m venv --system-site-packages env
