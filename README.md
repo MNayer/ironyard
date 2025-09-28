@@ -3,7 +3,8 @@
 ## Setup
 Make sure `typst` is installed on the system. Then run:
 ```
-./scripts/build.sh
+./scripts/setup.sh
+./scripts/install.sh
 ```
 
 ## E-Ink screen for IronYard

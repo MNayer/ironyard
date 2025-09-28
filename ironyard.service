@@ -1,0 +1,9 @@
+[Unit]
+Description=Publication Monitoring Service
+
+[Service]
+Type=simple
+ExecStart=/home/bot/run.sh
+
+[Install]
+WantedBy=multi-user.target

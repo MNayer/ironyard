@@ -1,0 +1,11 @@
+[Unit]
+Description=Publication Monitoring Service
+
+[Service]
+Type=simple
+User={{ user_name }}
+WorkingDirectory={{ working_directory }}
+ExecStart={{ exec_path }}
+
+[Install]
+WantedBy=multi-user.target
